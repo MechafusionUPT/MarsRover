@@ -1,0 +1,177 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Rover Controller</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            margin-top: 2rem;
+            background: #111;
+            color: #ddd;
+        }
+
+        h1 {
+            color: #0f0;
+            margin-bottom: .2rem;
+        }
+
+        #gpst {
+            font-weight: bold;
+        }
+
+        .ok {
+            color: #0f0;
+        }
+
+        .err {
+            color: #f33;
+        }
+
+        #val {
+            font: 16px monospace;
+            margin: 0.5rem 0;
+        }
+
+        #arrow {
+            font-size: 72px;
+            margin: 1rem 0;
+        }
+
+        #camera-box {
+            position: fixed;
+            top: 3%;
+            right: 70%;
+            width: 320px;
+            height: 240px;
+            border: 2px solid #444;
+            border-radius: 8px;
+            background-color: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+            font-family: monospace;
+            font-size: 1rem;
+        }
+
+        #camera-placeholder {
+            user-select: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Rover Controller</h1>
+    <p id="gp">Gamepad: <span id="gpst">disconnected</span></p>
+    <p id="val">vx=0.00 vy=0.00 grip=false</p>
+    <div id="arrow">■</div>
+
+    <div id="camera-box">
+        <div id="camera-placeholder">[CAMERA]</div> //TODO: camera
+    </div>
+
+    <p>Left stick: direction<br>Button A – close<br>Button B – open</p>
+
+    <div id="telemetry">
+        <h2>Telemetry</h2>
+        <p id="temp">Temp: -- °C</p>
+        <p id="hum">Hum: -- %</p>
+        <p id="terr" style="color:#f33"></p>
+    </div>
+
+    <script>
+        //MOVEMENT
+        const st = document.getElementById('gpst'),
+            val = document.getElementById('val'),
+            arrow = document.getElementById('arrow'),
+            gripEl = document.getElementById('gripper');
+
+        let lastSend = 0, lastGrip = false;
+
+        //TELEMETRIE
+        const t = document.getElementById('temp');
+        const h = document.getElementById('hum');
+        const err = document.getElementById('terr');
+
+        function dz(x, d = 0.15) {
+            if (Math.abs(x) < d) return 0;
+            const s = (Math.abs(x) - d) / (1 - d);
+            return Math.sign(x) * s;
+        }
+        function arrowFor(vx, vy) {
+            if (Math.hypot(vx, vy) < 0.05)
+                return '■';
+
+            const a = Math.atan2(vy, vx);
+            const dirs = [['→', 0], ['↗', Math.PI / 4], ['↑', Math.PI / 2], ['↖', 3 * Math.PI / 4], ['←', Math.PI], ['↙', -3 * Math.PI / 4], ['↓', -Math.PI / 2], ['↘', -Math.PI / 4]];
+
+            let best = '■', bd = 10;
+
+            for (const [ch, ang] of dirs) {
+                const d = Math.abs(Math.atan2(Math.sin(a - ang), Math.cos(a - ang)));
+                if (d < bd) { bd = d; best = ch; }
+            }
+            return best;
+        }
+        async function send_movement(vx, vy, sx, grip) {
+            try {
+                await fetch('/movement', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ vx, vy, sx, grip })
+                });
+            } catch (e) {
+                err.textContent = 'Eroare movement';
+            }
+        }
+        async function recieve() {
+            try {
+                const r = await fetch('/api/telemetry');
+                const j = await r.json();
+                if (!j.ok) {
+                    err.textContent = 'Eroare: ' + (j.error || '');
+                    return;
+                }
+                err.textContent = '';
+                t.textContent = 'Temperature: ' + j.temp.toFixed(2) + 'C';
+                h.textContent = 'Humidity: ' + j.hum.toFixed(2) + '%';
+            }
+            catch (e) {
+                //err.textContent = 'Eroare retea';
+            }
+        }
+        setInterval(recieve, 10);
+        recieve(); //apelata in afara loop-ului, latenta mai buna
+
+        function loop(t) {
+            const gp = navigator.getGamepads?.()[1] || navigator.getGamepads?.()[0];
+            if (gp) {
+                st.textContent = 'detectat'; st.className = 'ok';
+                let vx = dz(gp.axes[0]), vy = dz(-gp.axes[1]);
+                let sx = dz(gp.axes[2]);// joystick dreapta pentru SERVO (maybe)
+                vx = Math.sign(vx) * vx * vx; vy = Math.sign(vy) * vy * vy;
+                const a = gp.buttons[0]?.pressed; // A
+                const b = gp.buttons[1]?.pressed; // B
+                const grip = a ? true : (b ? false : lastGrip);
+                if (t - lastSend > 20 || grip !== lastGrip) {
+                    lastSend = t; lastGrip = grip;
+                    send_movement(vx, vy, sx, grip);
+                }
+                // TODO: modifica sa afiseze True sau False in functie de gripper
+                val.textContent = `vx=${vx.toFixed(2)} vy=${vy.toFixed(2)} grip=${grip}`;
+                arrow.textContent = arrowFor(vx, vy);
+            } else {
+                st.textContent = 'disconnected'; st.className = 'err';
+            }
+            requestAnimationFrame(loop);
+        }
+        window.addEventListener('gamepadconnected', () => { st.textContent = 'connected'; st.className = 'ok'; });
+        window.addEventListener('gamepaddisconnected', () => { st.textContent = 'disconnected'; st.className = 'err'; });
+        requestAnimationFrame(loop);
+    </script>
+</body>
+
+</html>

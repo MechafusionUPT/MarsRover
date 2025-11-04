@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Rover Control</title>
+  <style>
+    #logo {
+      position: fixed;
+      top: 3%;
+      left: 80%;
+      width: 20%;
+      height: auto;
+      opacity: 0.9;
+    }
+
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 3rem
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: .5rem
+    }
+
+    #st {
+      font-size: 1.1rem;
+      margin: .5rem 0
+    }
+
+    .ok {
+      color: green
+    }
+
+    .err {
+      color: red
+    }
+
+    #arrow {
+      font-size: 96px;
+      line-height: 1;
+      margin: 1rem 0
+    }
+
+    #camera-box {
+      position: fixed;
+      top: 3%;
+      right: 70%;
+      width: 320px;
+      height: 240px;
+      border: 2px solid #444;
+      border-radius: 8px;
+      background-color: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #888;
+      font-family: monospace;
+      font-size: 1rem;
+    }
+
+    #camera-placeholder {
+      user-select: none;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Control rover (WASD)</h1>
+  <img src="{{ url_for('static', filename='logo.jpeg') }}" id="logo">
+  <p>Space = STOP.</p>
+  <p>Stare: <span id="st" class="ok">STOP</span></p>
+  <div id="arrow" aria-live="polite">■</div>
+  <div id="camera-box">
+    <div id="camera-placeholder">[CAMERA]</div> //TODO: camera
+  </div>
+
+  <script>
+    const st = document.getElementById('st');
+    const arrowEl = document.getElementById('arrow');
+    let pressed = null, interval = null;
+    const arrowFor = { w: '↑', a: '←', s: '↓', d: '→', x: '■' };
+    async function send(cmd) {
+      try {
+        const r = await fetch('/cmd', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ k: cmd })
+        });
+        const j = await r.json();
+        st.textContent = j.ok ? (cmd === 'x' ? 'STOP' : cmd.toUpperCase()) : 'ERR';
+        st.className = j.ok ? 'ok' : 'err';
+      } catch { st.textContent = 'ERR rețea'; st.className = 'err'; }
+    }
+    function updateArrow(cmd) { arrowEl.textContent = arrowFor[cmd] || '■'; }
+    function startSending() {
+      if (interval) return;
+      interval = setInterval(() => {
+        if (pressed) { updateArrow(pressed); send(pressed); }
+        else { updateArrow('x'); send('x'); }
+      }, 100); //100ms
+    }
+    function stopSending() { clearInterval(interval); interval = null; }
+    window.addEventListener('keydown', e => {
+      const k = e.key.toLowerCase();
+      if (['w', 'a', 's', 'd'].includes(k)) { pressed = k; startSending(); }
+      else if (e.code === 'Space') { pressed = null; updateArrow('x'); send('x'); e.preventDefault(); }
+    });
+    window.addEventListener('keyup', e => {
+      const k = e.key.toLowerCase();
+      if (['w', 'a', 's', 'd'].includes(k) && k === pressed) { pressed = null; }
+    });
+  </script>
+</body>
+
+</html>
