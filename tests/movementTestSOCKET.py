@@ -25,8 +25,9 @@ def camera_loop(dev=2):
     # 640x480@20; încearcă MJPG (coment-ează dacă dă eroare)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    cap.set(cv2.CAP_PROP_FPS, 60)
+    cap.set(cv2.CAP_PROP_FPS, 20)
     cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+    cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     print(f"[CAM] Pornit /dev/video{dev}")
 
     while True:
