@@ -111,7 +111,7 @@
     </div>
 
     <div class="card">
-        <div style="margin-bottom:.4rem;">Stream cameră de pe server</div>
+        <div style="margin-bottom:.4rem;">Camera USB</div>
         <div class="video-wrap">
             <video id="videoEl" autoplay playsinline muted hidden></video>
             <img id="mjpegEl" alt="MJPEG stream" src="http://{{ request.host }}/stream.mjpg">
@@ -200,7 +200,7 @@
 
                 valsEl.textContent = `vx=${vx.toFixed(2)} vy=${vy.toFixed(2)} sx=${sx.toFixed(2)} grip=${grip}`;
                 const angle = Math.atan2(-vy, vx) * 180 / Math.PI - 90; // corect
-                arrowEl.style.transform = `rotate(${isNaN(angle) ? 0 : angle}deg)`;
+                arrowEl.style.transform = `rotate(${isNaN(-angle) ? 0 : angle}deg)`;
             }
             requestAnimationFrame(poll);
         }
@@ -251,7 +251,7 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             const qrCam = document.getElementById("qrCam");
-            if (qrCam) qrCam.src = `http://10.142.55.191:8080/video`;
+            if (qrCam) qrCam.src = `http://10.146.163.97:8080`;
         });
 
         // afișează textul decodat
