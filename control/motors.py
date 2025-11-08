@@ -1,7 +1,8 @@
 import os
-from libs.utils import clamp
-from constants import *
+from utils import clamp
 import lgpio
+from config import LEFT_MOT, RIGHT_MOT, PWM_PERIOD_NS, PWM0, PWM1, PWM_PATH
+from config import IN1, IN2, IN3, IN4, CHIP, COMPENSATION_LEFT, COMPENSATION_RIGHT
 
 h = None
 _period_ns = PWM_PERIOD_NS
@@ -16,7 +17,7 @@ def _export_pwm():
         if not os.path.isdir(p):
             _write(f"{PWM_PATH}/export", idx)
 
-def pwm_setup():
+def _pwm_setup():
     global h, _period_ns
     # deschide chip GPIO și setează direcțiile
     if h is None:
@@ -57,7 +58,7 @@ def _set_duty(channel: int, duty01: float):
     path = PWM0 if channel == 0 else PWM1
     _write(f"{path}/duty_cycle", dc)
 
-def pwm_speed(channel: int, power: float):
+def _pwm_speed(channel: int, power: float):
     """
     channel: 0=stânga (ENA/GPIO12), 1=dreapta (ENB/GPIO13)
     power:   [-1..1] semn=sens, modul=viteză
@@ -88,3 +89,13 @@ def pwm_cleanup():
         if h is not None:
             lgpio.gpiochip_close(h)
             h = None
+
+def init_motors():
+    _pwm_setup()
+    print("[MOTORS] pwm_setup complet", flush=True)
+
+def set_drive(vx,vy):
+    vx= float(vx)
+    vy= float(vy)
+    _pwm_speed(LEFT_MOT, clamp(vx-vy))
+    _pwm_speed(RIGHT_MOT, clamp(vx+vy))

@@ -3,19 +3,13 @@
 from board import SCL, SDA
 import busio
 from adafruit_pca9685 import PCA9685
-from libs.PCA_control import angle_to_duty
-from constants import *
+from control.PCA import set_grip, init_servos
 import time
 
-i2c = busio.I2C(SCL, SDA)
-pca = PCA9685(i2c, address=ADDR_PCA)
-pca.frequency = FREQ_PCA
-
+init_servos()
 
 while True: 
-    pca.channels[channelPitch].duty_cycle = angle_to_duty(0)
-    pca.channels[channelGrip].duty_cycle = angle_to_duty(0)
+    set_grip(False)
     time.sleep(3)
-    pca.channels[channelPitch].duty_cycle = angle_to_duty(180)
-    pca.channels[channelGrip].duty_cycle = angle_to_duty(180)
+    set_grip(True)
     time.sleep(3)
