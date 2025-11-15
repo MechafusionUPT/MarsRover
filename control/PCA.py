@@ -3,12 +3,13 @@ from board import SCL, SDA
 import busio
 from adafruit_pca9685 import PCA9685
 import time
-from config import GRIP_CLOSED, GRIP_OPEN, DEFAULT_PITCH, MAX_PITCH, MIN_PITCH, ADDR_PCA, FREQ_PCA, MIN_PCA, MAX_PCA, channelGrip, channelPitch
-
+from config import GRIP_CLOSED, GRIP_OPEN, DEFAULT_PITCH, MAX_PITCH, MIN_PITCH, FACT_PITCH, ADDR_PCA, FREQ_PCA, MIN_PCA, MAX_PCA, channelGrip, channelPitch
+from utils import clamp
 
 i2c = busio.I2C(SCL, SDA)
 pca = PCA9685(i2c, address=ADDR_PCA)
 pca.frequency = FREQ_PCA
+
 this_angle=DEFAULT_PITCH
 
 def init_servos():
@@ -25,5 +26,13 @@ def set_grip(s):
     else:
         pca.channels[channelGrip].duty_cycle = _angle_to_duty(GRIP_OPEN)
 
-def set_pitch(angle):
-    pca.channels[channelPitch].duty_cycle = _angle_to_duty(this_angle)
+def set_pitch_to(angle):
+    pca.channels[channelPitch].duty_cycle = _angle_to_duty(angle)
+
+def reset_pitch():
+        change_pitch_by(DEFAULT_PITCH)
+
+def change_pitch_by(change):
+    global this_angle
+    this_angle = clamp(this_angle + (float)(change * FACT_PITCH), MIN_PITCH, MAX_PITCH)
+    set_pitch_to(this_angle)
