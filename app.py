@@ -15,7 +15,7 @@ socketio = SocketIO(app, cors_allowed_origins=CORS_ALLOWED_ORIGINS , async_mode=
 def bootstrap():
     init_motors()
     init_servos()
-    start_usb_camera()
+    #start_usb_camera()
     start_ip_capture()
     start_qr_worker(socketio)
 

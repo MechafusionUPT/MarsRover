@@ -1,5 +1,5 @@
 # cameras/usb.py
-
+#nu mai folosim, transmitem direct prin UDP
 import subprocess
 import threading
 
@@ -51,7 +51,7 @@ def _camera_loop(dev, w, h, fps, input_format):
     frames = 0
 
     while not _stop:
-        chunk = proc.stdout.read(4096)
+        chunk = proc.stdout.read(65536)
         if not chunk:
             if proc.poll() is not None:
                 err = proc.stderr.read().decode(errors="ignore")
@@ -76,9 +76,9 @@ def _camera_loop(dev, w, h, fps, input_format):
             frame = buf[soi:eoi+2]
             buf = buf[eoi+2:]
 
-            frames += 1
+            """frames += 1
             if USB_LOG_EVERY_N_FRAMES and frames % USB_LOG_EVERY_N_FRAMES == 0:
-                print(f"[USB] cadre MJPEG: {frames}", flush=True)
+                print(f"[USB] cadre MJPEG: {frames}")"""
 
             with _lock:
                 _last_jpeg = frame

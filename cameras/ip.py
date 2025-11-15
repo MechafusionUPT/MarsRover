@@ -26,7 +26,7 @@ def _ip_capture_loop(url):
         cap.grab()
         ok, frame = cap.read()
         if not ok:
-            time.sleep(0.02)
+            time.sleep(0.01)
             continue
         with _lock:
             _last_frame = frame

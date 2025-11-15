@@ -29,15 +29,6 @@ def _draw_overlay(frame, boxes, text=None):
 
 
 def _qr_loop(socketio):
-    """
-    Worker QR:
-    - ia ultimul frame de la IP camera,
-    - face preprocesare simplă,
-    - decodează doar cu ZBar,
-    - desenează overlay,
-    - expune ultimul JPEG pentru stream,
-    - emite qr.detected (throttled).
-    """
     global _qr_last_jpeg, _stop
 
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -107,7 +98,7 @@ def _qr_loop(socketio):
                     p2 = tuple(pts[(i + 1) % n])
                     cv2.line(frame, p1, p2, (0, 255, 0), 2)
 
-            """if main_text:
+        if main_text:
             shown = main_text[:80]
             cv2.putText(
                 frame,
@@ -117,23 +108,22 @@ def _qr_loop(socketio):
                 0.7,
                 (0, 255, 0),
                 2,
-            )"""
+            )
 
-            # 5. Emit throttled
-            now = time.time()
-            changed = (main_text != last_text)
-            too_old = (now - last_emit) > QR_EMIT_INTERVAL
-            if changed or too_old:
-                if LOG_QR_DETECTIONS:
-                    print(f"[QR] detected: {main_text}", flush=True)
-                if socketio is not None:
-                    socketio.emit(
-                        "qr.detected",
-                        {"text": main_text, "ts": now},
-                        broadcast=True,
-                    )
-                last_text = main_text
-                last_emit = now
+        # 5. Emit throttled
+        now = time.time()
+        changed = (main_text != last_text)
+        too_old = (now - last_emit) > QR_EMIT_INTERVAL
+        if changed or too_old:
+            if LOG_QR_DETECTIONS:
+                print(f"[QR] detected: {main_text}", flush=True)
+            if socketio is not None:
+                socketio.emit(
+                    "qr.detected",
+                    {"text": main_text, "ts": now},
+                )
+            last_text = main_text
+            last_emit = now
 
         # 6. JPEG pentru stream_phone_qr.mjpg
         ok, buf = cv2.imencode(".jpg", frame, enc_params)
