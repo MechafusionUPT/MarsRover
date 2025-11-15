@@ -26,7 +26,7 @@ def init_routes(app):
 
     @app.route("/")
     def index():
-        return render_template("indexSOCKET.html")
+        return render_template("indexNoVideo.html")
 
     @app.route("/stream.mjpg")
     def stream_mjpg():
