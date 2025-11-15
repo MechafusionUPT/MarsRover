@@ -3,7 +3,7 @@
 from flask_socketio import emit
 
 from control.motors import set_drive
-from control.PCA import set_grip
+from control.PCA import set_grip, change_pitch_by, reset_pitch
 
 
 def init_sockets(socketio):
@@ -19,15 +19,26 @@ def init_sockets(socketio):
         vy = float(data.get("vy", 0.0))
         sx = float(data.get("sx", 0.0))   # rezervat, dacă vei folosi yaw/rotire
         grip = int(data.get("grip", 0))
+        pitch = int(data.get("pitch", 0))
 
-        print(f"[SOCKET] vx={vx:.2f} vy={vy:.2f} sx={sx:.2f} grip={grip}", flush=True)
+        print(f"[SOCKET] vx={vx:.2f} vy={vy:.2f} sx={sx:.2f} grip={grip} pitch={pitch}", flush=True)
 
         # logica ta de mișcare (normalizată în control.motors)
         set_drive(vx, vy)
         set_grip(grip)
+        change_pitch_by(sx)
+        if(pitch):
+            reset_pitch()
 
         emit(
             "telemetry.movement",
-            {"vx": vx, "vy": vy, "sx": sx, "grip": grip},
+            {"vx": vx, "vy": vy, "sx": sx, "grip": grip, "pitch": pitch},
             broadcast=True,
         )
+
+        '''emit(
+            "telemetry.sensors",
+            {"temp": t, "hum": h},
+            broadcast=True,
+        )'''
+    
