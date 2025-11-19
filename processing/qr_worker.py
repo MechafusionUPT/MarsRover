@@ -1,10 +1,13 @@
 # processing/qr_worker.py
-
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 import time
 import threading
 import cv2
 import numpy as np
 from pyzbar.pyzbar import decode as zbar_decode, ZBarSymbol
+from I2C.bmp import read_temp_hum
+from config import TEAM_NAME
+import requests
 
 from cameras import get_ip_frame
 from config import (
@@ -19,15 +22,45 @@ _qr_lock = threading.Lock()
 _qr_last_jpeg = None
 _stop = False
 
-def _draw_overlay(frame, boxes, text=None):
+'''def _draw_overlay(frame, boxes, text=None):
     for pts in boxes:
         n = len(pts)
         for i in range(n):
             p1 = tuple(pts[i])
             p2 = tuple(pts[(i + 1) % n])
-            cv2.line(frame, p1, p2, (0, 255, 0), 2)
+            cv2.line(frame, p1, p2, (0, 255, 0), 2)'''
 
+def build_checkin_url(raw_url: str) -> tuple[str, float, float]:
+    temp, hum = read_temp_hum()
 
+    # 2. Parsăm URL-ul
+    parsed = urlparse(raw_url)
+    query = parse_qs(parsed.query)  # dict: cheie -> listă de valori
+
+    # 3. Suprascriem / setăm parametrii ceruți de enunț
+    query["team"] = [TEAM_NAME]
+    query["t"] = [f"{temp:.1f}"]
+    query["h"] = [f"{hum:.0f}"]
+
+    # 4. Reconstruim query string și URL-ul complet
+    new_query_str = urlencode(query, doseq=True)
+    new_parsed = parsed._replace(query=new_query_str)
+    new_url = urlunparse(new_parsed)
+
+    return new_url, temp, hum
+
+def call_checkin_url(url: str) -> tuple[str, dict | None, str | None]:
+
+    try:
+        r = requests.get(url, timeout=5)
+        r.raise_for_status()
+        data = r.json()
+        status = data.get("status", "NO_STATUS")
+        return status, data, None
+    except Exception as e:
+        # dacă ceva nu merge (network, JSON, cod HTTP != 200)
+        return "ERROR", None, str(e)
+    
 def _qr_loop(socketio):
     global _qr_last_jpeg, _stop
 
@@ -110,20 +143,63 @@ def _qr_loop(socketio):
                 2,
             )
 
-        # 5. Emit throttled
+                # 5. Emit throttled + apel checkin cu temp/hum
         now = time.time()
         changed = (main_text != last_text)
         too_old = (now - last_emit) > QR_EMIT_INTERVAL
-        if changed or too_old:
+
+        if main_text and (changed or too_old):
             if LOG_QR_DETECTIONS:
                 print(f"[QR] detected: {main_text}", flush=True)
+
+            raw_url = main_text.strip()
+            new_url = None
+            status = None
+            temp = None
+            hum = None
+            error = None
+            resp = None
+
+            try:
+                # 5.1. Construim URL-ul nou (cu team, temp, hum)
+                new_url, temp, hum = build_checkin_url(raw_url)
+            except Exception as e:
+                error = f"build_checkin_url failed: {e}"
+                status = "ERROR"
+                if LOG_QR_DETECTIONS:
+                    print(f"[QR] eroare build_checkin_url: {e}", flush=True)
+
+            if new_url and status is None:
+                # 5.2. Apelăm URL-ul nou și citim JSON-ul
+                try:
+                    status, resp, err = call_checkin_url(new_url)
+                    if err:
+                        error = err
+                except Exception as e:
+                    status = "ERROR"
+                    error = f"call_checkin_url exception: {e}"
+                    if LOG_QR_DETECTIONS:
+                        print(f"[QR] eroare call_checkin_url: {e}", flush=True)
+
+            # 5.3. Emit către frontend
             if socketio is not None:
                 socketio.emit(
                     "qr.detected",
-                    {"text": main_text, "ts": now},
+                    {
+                        "raw_url": raw_url,
+                        "url": new_url,
+                        "temp": temp,
+                        "hum": hum,
+                        "status": status,
+                        "response": resp,
+                        "error": error,
+                        "ts": now,
+                    },
                 )
+
             last_text = main_text
             last_emit = now
+
 
         # 6. JPEG pentru stream_phone_qr.mjpg
         ok, buf = cv2.imencode(".jpg", frame, enc_params)

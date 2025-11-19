@@ -24,7 +24,8 @@
             border: 1px solid #333;
             border-radius: 12px;
             padding: 1rem;
-            max-width: 680px; /* încape lejer pe jumătate de ecran */
+            max-width: 1000px;
+            /* încape lejer pe jumătate de ecran */
             margin-bottom: 1rem;
         }
 
@@ -95,10 +96,29 @@
 
         // textul QR vine de la worker-ul de QR din backend
         socket.on("qr.detected", d => {
-            if (d && d.text && qrTextEl) {
-                qrTextEl.textContent = d.text;
+            const el = document.getElementById("qrText");
+            const raw = d.raw_url ?? d.text ?? "";
+            const newUrl = d.url ?? "";
+            const status = d.status ?? "";
+            const temp = d.temp?.toFixed?.(1) ?? d.temp;
+            const hum = d.hum?.toFixed?.(1) ?? d.hum;
+            const err = d.error ?? null;
+
+            let lines = [
+                `QR citit:   ${raw || "(nimic)"}`,
+                `Temp:       ${temp ?? "?"} °C`,
+                `Umiditate:  ${hum ?? "?"} %`,
+                `Status:     ${status || "(necunoscut)"}`,
+            ];
+
+            if (err) {
+                lines.push(`Eroare:     ${err}`);
             }
+
+            el.textContent = lines.join("\n");
+
         });
+
 
         function nearly(a, b, eps = EPS) { return Math.abs(a - b) < eps; }
 

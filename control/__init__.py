@@ -1,11 +1,9 @@
 # control/__init__.py
 
-from .motors import init_motors, set_drive
-from .PCA import init_servos, set_grip
+from .motors import init_motors, set_drive, pwm_cleanup
 
 __all__ = [
     "init_motors",
-    "init_servos",
     "set_drive",
-    "set_grip",
+    "pwm_cleanup"
 ]
