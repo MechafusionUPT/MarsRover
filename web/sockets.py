@@ -4,8 +4,9 @@ from flask_socketio import emit
 
 from control.motors import set_drive
 from I2C.PCA import set_pitch_to, change_pitch_by, reset_pitch
-from I2C.PCA import set_grip_to, set_grip, change_grip_by
+from I2C.PCA import set_grip_to, change_grip_by, set_grip_amp
 from I2C.bmp import read_temp_hum
+from I2C.ampermeter import read_amp
 
 
 def init_sockets(socketio):
@@ -21,13 +22,13 @@ def init_sockets(socketio):
         vy = float(data.get("vy", 0.0))
         sx = float(data.get("sx", 0.0)) # pentru Pitch
         grip = int(data.get("grip", 0)) #setam Grip (True sau False)
-        pitch = int(data.get("pitch", 0)) #
-
-        print(f"[SOCKET] vx={vx:.2f} vy={vy:.2f} sx={sx:.2f} grip={grip} pitch={pitch}", flush=True)
+        pitch = int(data.get("pitch", 0)) # resetare Pitch (pozitie initiala)
+        amp = read_amp()
+        print(f"[SOCKET] vx={vx:.2f} vy={vy:.2f} sx={sx:.2f} grip={grip} pitch={pitch} amp={amp:.2f}", flush=True)
 
         # logica ta de mișcare
         set_drive(vx, vy)
-        set_grip(grip)
+        set_grip_amp(grip)
         change_pitch_by(sx)
         if(pitch):
             reset_pitch()

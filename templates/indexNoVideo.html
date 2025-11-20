@@ -152,7 +152,7 @@
                 nearly(grip, last.grip) &&
                 nearly(pitch, last.pitch)
             );
-            if (!changed && (now - lastSend) < 50) return;   // max ~20 Hz
+            if (!changed && (now - lastSend) < 100) return;   // max ~20 Hz
 
             last = { vx, vy, sx, grip, pitch };
             lastSend = now;

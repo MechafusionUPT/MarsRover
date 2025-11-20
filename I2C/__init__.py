@@ -5,5 +5,7 @@ __all__=[
     "init_bmp280",
     "read_temp_hum",
     "init_servos",
-    "set_grip",
+    "set_grip_amp",
+    "amp_over_threshold",
+    "update_close_grip"
 ]

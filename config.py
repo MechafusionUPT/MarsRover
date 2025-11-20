@@ -22,7 +22,7 @@ USB_INPUT_FORMAT = "mjpeg"      # cerut ffmpeg / v4l2
 USB_LOG_EVERY_N_FRAMES = 60     # doar pentru debug
 
 # IP CAMERA (telefon)
-IP_CAMERA_URL = "http://10.88.133.228:8080/video"
+IP_CAMERA_URL = "http://10.208.194.3:8080/video"
 IP_BUFFERSIZE = 1             # ca să nu acumulezi lag
 
 # QR WORKER
@@ -59,17 +59,19 @@ FREQ_PCA=50
 MIN_PCA=500
 MAX_PCA=2500
 
+CHINA = 180
 channelGrip=12 #gripperServo pe PCA
 DEFAULT_GRIP=0 #Default: closed
 FACT_GRIP=5
 GRIP_CLOSED=0
-GRIP_OPEN=60
+GRIP_OPEN=40
 
-channelPitch=8 #pitchServo pe PCA
-DEFAULT_PITCH=90
-FACT_PITCH=5
-MAX_PITCH=180
-MIN_PITCH=0
+GOBILDA = 300
+channelPitch=0 #pitchServo pe PCA
+DEFAULT_PITCH = 10 
+FACT_PITCH=10
+UP_PITCH=0
+DOWN_PITCH=240
 
 #BMP280
 ADDR_BMP=0x76
@@ -77,6 +79,8 @@ SEA_LEVEL=1013.25
 
 #AMPERMETER
 ADDR_AMP=0x40
+THRESHOLD_AMP=1700
+OVERSHOOT = 10
 
 # DEBUG / LOGGING
 DEBUG = True

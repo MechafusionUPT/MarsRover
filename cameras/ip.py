@@ -36,20 +36,12 @@ def _ip_capture_loop(url):
 
 
 def start_ip_capture():
-    """
-    Pornește thread-ul pentru camera IP.
-    Apeși o singură dată din app.py.
-    """
     t = threading.Thread(target=_ip_capture_loop, args=(IP_CAMERA_URL,), daemon=True)
     t.start()
     print("[IP] ip_capture_loop pornit", flush=True)
 
 
 def get_ip_frame():
-    """
-    Returnează ultimul frame BGR (np.ndarray) sau None.
-    Folosit de QR worker.
-    """
     with _lock:
         if _last_frame is None:
             return None
