@@ -4,14 +4,14 @@ from pyzbar import pyzbar
 import os
 import board
 import sys
-import adafruit_dht
 import json
 import time
 import threading
+from urllib.parse import urlparse, parse_qs
+# ... alte importuri ...
 
 TEAM_NAME = "ALSERA"  # !!Aici schimba numele echipei
 os.environ["BLINKA_FORCE"] = "1"
-dht = adafruit_dht.DHT11(board.D4)
 
 app = Flask(__name__)
 
@@ -24,8 +24,8 @@ generated_url = "—"
 def read_sensor():
     for _ in range(5):
         try:
-            t = dht.temperature
-            h = dht.humidity
+            t = 1
+            h = 2
             if t is not None and h is not None:
                 return t, h
         except Exception:
@@ -54,26 +54,39 @@ def scan_qr():
                 qr_content = qr_data
                 print("QR detectat:", qr_data)
 
-                try:
-                    data = json.loads(qr_data)
-                    checkpoint = data.get("checkpoint", "t1")
-                    secret = data.get("secret", "unknown")
-                except Exception:
-                    checkpoint, secret = "t1", "unknown"
-
+                # --- BLOCUL CORECTAT: FOLOSIM urllib.parse ---
+                # 1. Parsăm URL-ul pentru a obține query string-ul
+                parsed_url = urlparse(qr_data)
+                
+                # 2. Extragem parametrii (query devine un dicționar: cheie -> listă de valori)
+                query = parse_qs(parsed_url.query) 
+                
+                # 3. Extragem valorile, folosind indexul [0] pentru a lua primul element din listă
+                # Folosim .get("p") pentru checkpoint și .get("secret") pentru secret
+                # 'p' este numele parametrului în URL-ul checkin.php
+                
+                # Extragem "p" (Checkpoint), default "t1"
+                # query.get('p') returnează o listă (ex: ['T1']). [0] ia elementul 'T1'.
+                checkpoint = query.get("p", ["t1"])[0] 
+                
+                # Extragem "secret", default "unknown"
+                secret = query.get("secret", ["unknown"])[0]
+                
+                print(f"DEBUG: Checkpoint extras: {checkpoint}, Secret extras: {secret}")
+                # ---------------------------------------------
+                
                 temp, hum = read_sensor()
                 if temp is not None:
+                    # Înlocuim parametrii extrași în URL-ul final
                     generated_url = (
                         f"https://iovanalex.ro/sec/checkin.php?"
-                        f"team={TEAM_NAME}&p={checkpoint}&secret={secret}&t={temp}&h={hum}"
+                        f"team={TEAM_NAME}&p={checkpoint}&secret={secret}&t={temp:.0f}&h={hum:.0f}"
                     )
                     print("URL generat:", generated_url)
                 else:
                     generated_url = "Eroare la citirea senzorului DHT11!"
 
         time.sleep(0.5)
-
-
 # ----------------------------------------------------------
 # Generator pentru live video feed
 # ----------------------------------------------------------
@@ -101,7 +114,7 @@ def video_feed():
 # ----------------------------------------------------------
 @app.route("/")
 def index():
-    return render_template("qr_livefeed.html", content=qr_content, url=generated_url)
+    return render_template("index.html", content=qr_content, url=generated_url)
 
 
 @app.route("/data")

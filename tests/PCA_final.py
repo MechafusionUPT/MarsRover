@@ -9,7 +9,7 @@ import time
 init_servos()
 
 while True: 
-    set_pitch_to(0)
+    set_pitch_to(20)
     #set_grip_to(GRIP_OPEN)
     print("SUS")
     time.sleep(3)

@@ -10,7 +10,5 @@ def init_bmp280():
     bme.sea_level_pressure = SEA_LEVEL
     print("[BMP] init senzor hum si temp")
 
-
-
 def read_temp_hum():
     return bme.temperature, bme.humidity

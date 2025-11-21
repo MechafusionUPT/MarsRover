@@ -37,12 +37,12 @@ def build_checkin_url(raw_url: str) -> tuple[str, float, float]:
     parsed = urlparse(raw_url)
     query = parse_qs(parsed.query)  # dict: cheie -> listă de valori
 
-    # 3. Suprascriem / setăm parametrii ceruți de enunț
     query["team"] = [TEAM_NAME]
-    query["t"] = [f"{temp:.1f}"]
+    # Folosim :.0f pentru a trimite numere întregi (ex: 25, 35)
+    # Dacă serverul cere zecimale, schimbă în :.1f
+    query["t"] = [f"{temp:.0f}"]
     query["h"] = [f"{hum:.0f}"]
 
-    # 4. Reconstruim query string și URL-ul complet
     new_query_str = urlencode(query, doseq=True)
     new_parsed = parsed._replace(query=new_query_str)
     new_url = urlunparse(new_parsed)
@@ -50,9 +50,16 @@ def build_checkin_url(raw_url: str) -> tuple[str, float, float]:
     return new_url, temp, hum
 
 def call_checkin_url(url: str) -> tuple[str, dict | None, str | None]:
+    # --- MODIFICARE: Adăugare Headere pentru simulare Browser ---
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 OPR/122.0.0.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    }
+    # ------------------------------------------------------------
 
     try:
-        r = requests.get(url, timeout=5)
+        # Adăugăm parametrul headers=headers în cerere
+        r = requests.get(url, timeout=5, headers=headers)
         r.raise_for_status()
         data = r.json()
         status = data.get("status", "NO_STATUS")
@@ -210,7 +217,6 @@ def _qr_loop(socketio):
             _qr_last_jpeg = buf.tobytes()
 
     print("[QR] worker oprit", flush=True)
-
 
 
 def start_qr_worker(socketio):

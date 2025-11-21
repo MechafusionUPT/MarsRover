@@ -22,11 +22,11 @@ USB_INPUT_FORMAT = "mjpeg"      # cerut ffmpeg / v4l2
 USB_LOG_EVERY_N_FRAMES = 60     # doar pentru debug
 
 # IP CAMERA (telefon)
-IP_CAMERA_URL = "http://10.208.194.3:8080/video"
+IP_CAMERA_URL = "http://10.117.237.87:8080/video" #"http://192.168.8.129:8080/video"
 IP_BUFFERSIZE = 1             # ca să nu acumulezi lag
 
 # QR WORKER
-QR_TARGET_FPS = 20          # cât de des procesezi cadrele
+QR_TARGET_FPS = 10          # cât de des procesezi cadrele
 QR_JPEG_QUALITY = 70
 QR_EMIT_INTERVAL = 5.0        # secunde: cât de des poți retrimite același text
 
@@ -36,15 +36,15 @@ STREAM_JPEG_QUALITY = 70        # pentru streamul QR cu overlay
 # MOTOARE / CONTROL
 LEFT_MOT=0
 RIGHT_MOT=1
-COMPENSATION_LEFT=0
-COMPENSATION_RIGHT=0
+COMPENSATION_LEFT=0.2
+COMPENSATION_RIGHT=0.2
 CHIP=0
 PWM_FREQ_HZ=10000
 PWM_PERIOD_NS = int (1e9 // PWM_FREQ_HZ)
 ENA=12 #GALBEN
 ENB=13 #VERDE
-IN1=23 #ALBASTRU
-IN2=24 #MOV
+IN1=24 #ALBASTRU
+IN2=23 #MOV
 IN3=5 #ALB
 IN4=6 #GRI
 
@@ -70,7 +70,7 @@ GOBILDA = 300
 channelPitch=0 #pitchServo pe PCA
 DEFAULT_PITCH = 10 
 FACT_PITCH=10
-UP_PITCH=0
+UP_PITCH=20
 DOWN_PITCH=240
 
 #BMP280

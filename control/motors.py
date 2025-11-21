@@ -59,21 +59,20 @@ def _set_duty(channel: int, duty01: float):
     _write(f"{path}/duty_cycle", dc)
 
 def _pwm_speed(channel: int, power: float):
-    """
-    channel: 0=stânga (ENA/GPIO12), 1=dreapta (ENB/GPIO13)
-    power:   [-1..1] semn=sens, modul=viteză
-    """
     p = clamp(power, -1.0, 1.0)
     # deadband mic să eviți bâzâitul la aproape zero
-    if abs(p) < 0.02:
+    if abs(p) < 0.05:
         p = 0.0
-
-    if channel == 0:
-        _set_dir_left(p >= 0.0)
-        comp=COMPENSATION_LEFT
-    elif channel == 1:
-        _set_dir_right(p >= 0.0)
-        comp=COMPENSATION_RIGHT
+    p = p/2
+    comp=0
+    if channel == LEFT_MOT:
+        if p != 0:
+            _set_dir_left(p >= 0.0)
+            comp=COMPENSATION_LEFT
+    elif channel == RIGHT_MOT:
+        if p != 0:
+            _set_dir_right(p >= 0.0)
+            comp=COMPENSATION_RIGHT
     else:
         raise ValueError("channel trebuie să fie 0 sau 1")
 
@@ -95,7 +94,13 @@ def init_motors():
     print("[MOTORS] pwm_setup complet", flush=True)
 
 def set_drive(vx,vy):
-    vx= float(vx)
-    vy= float(vy)
-    _pwm_speed(LEFT_MOT, clamp(vx-vy))
-    _pwm_speed(RIGHT_MOT, clamp(vx+vy))
+    if vx == 0 and vy == 0:
+        lgpio.gpio_write(h, IN1, 0)
+        lgpio.gpio_write(h, IN2, 0)
+        lgpio.gpio_write(h, IN3, 0)
+        lgpio.gpio_write(h, IN4, 0)
+    else:
+        vx= float(vx)
+        vy= float(vy)
+        _pwm_speed(LEFT_MOT, clamp(vy-vx))
+        _pwm_speed(RIGHT_MOT, clamp(vy+vx))
